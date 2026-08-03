@@ -1,0 +1,22 @@
+# API 키
+.env
+.env.*
+!.env.example
+
+# 데이터 / 실험 산출물
+data/
+outputs/
+*.json.tmp
+
+# 파이썬
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# 에디터 / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

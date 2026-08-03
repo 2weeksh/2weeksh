@@ -3,11 +3,6 @@ line-length = 120
 target-version = ['py38']
 include = '\.py$'
 
-[tool.flake8]
-max-line-length = 120
-ignore = ['E203', 'W503', 'E501']
-exclude = "data/**"
-
 [tool.isort]
 line_length = 120
 multi_line_output = 3

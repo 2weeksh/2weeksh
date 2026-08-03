@@ -1,0 +1,4 @@
+bm25s>=0.2.0
+kiwipiepy>=0.17.0
+litellm>=1.40.0
+python-dotenv>=1.0.0
