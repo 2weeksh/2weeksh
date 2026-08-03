@@ -44,8 +44,8 @@
 **중요:** 모든 코드는 `dev_clickbait_title_generation_rag` 브랜치에 있습니다.
 
 ```bash
-git clone https://github.com/2weeksh/2weeksh.git
-cd 2weeksh
+git clone https://github.com/2weeksh/clickbait_title_generation_rag.git
+cd clickbait_title_generation_rag
 git checkout dev_clickbait_title_generation_rag
 ```
 
