@@ -1,32 +1,42 @@
 import argparse
 import json
 import random
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from bm25s import BM25
 from kiwipiepy import Kiwi
 
 from io_utils import save_json
 
-parser = argparse.ArgumentParser(description="유사 기사 검색하는 스크립트")
-# 경로 설정
-parser.add_argument("--clickbait_path", type=str, default="data/TL_Part1_Clickbait_Direct_merged.json")
-parser.add_argument("--non_clickbait_path", type=str, default="data/VL_Part1_Clickbait_Direct_merged.json")
-parser.add_argument("--rag_retrieval_path", type=str, default="outputs/rag_retrieval_results.json")
-# 하이퍼파라미터 설정
-parser.add_argument("--min_num_character", type=int, default=100, help="corpus에 포함될 기사 최소 글자 수")  #
-parser.add_argument("--max_num_character", type=int, default=3000, help="corpus에 포함될 기사 최대 글자 수")
-parser.add_argument("--k", type=int, default=5, help="검색할 유사 기사 개수")
-parser.add_argument("--sample_size", type=int, default=200, help="쿼리 샘플 개수")  #
-args = parser.parse_args()
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="유사 기사 검색하는 스크립트")
+    # 경로 설정
+    parser.add_argument("--clickbait_path", type=str, default="data/TL_Part1_Clickbait_Direct_merged.json")
+    parser.add_argument("--non_clickbait_path", type=str, default="data/VL_Part1_Clickbait_Direct_merged.json")
+    parser.add_argument("--rag_retrieval_path", type=str, default="outputs/rag_retrieval_results.json")
+    # 하이퍼파라미터 설정
+    parser.add_argument("--min_num_character", type=int, default=100, help="corpus에 포함될 기사 최소 글자 수")
+    parser.add_argument("--max_num_character", type=int, default=3000, help="corpus에 포함될 기사 최대 글자 수")
+    parser.add_argument("--k", type=int, default=5, help="검색할 유사 기사 개수")
+    parser.add_argument("--sample_size", type=int, default=200, help="쿼리 샘플 개수")
+    return parser
 
 
-# 토크나이저 초기화
-kiwi = Kiwi()
+# 형태소 분석기 로딩이 무거워서 실제로 토큰화할 때 한 번만 초기화한다
+_kiwi: Optional[Kiwi] = None
+
+
+def get_tokenizer() -> Kiwi:
+    global _kiwi
+    if _kiwi is None:
+        _kiwi = Kiwi()
+    return _kiwi
 
 
 # 토크나이저
 def tokenize(texts: List[str]) -> List[List[str]]:
+    kiwi = get_tokenizer()
     return [[token.form for token in kiwi.tokenize(text)] for text in texts]
 
 
@@ -109,7 +119,8 @@ def retrieve_title(
     return rag_queries
 
 
-if __name__ == "__main__":
+def main() -> None:
+    args = build_parser().parse_args()
     random.seed(42)
 
     corpus_list, corpus_map = build_corpus(args.clickbait_path, args.min_num_character, args.max_num_character)
@@ -129,3 +140,7 @@ if __name__ == "__main__":
     # 저장
     save_json(args.rag_retrieval_path, rag_queries)
     print(f"{len(rag_queries)}건 저장 -> {args.rag_retrieval_path}")
+
+
+if __name__ == "__main__":
+    main()

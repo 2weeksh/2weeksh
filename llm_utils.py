@@ -1,8 +1,6 @@
 import time
 from typing import Any, Dict, List
 
-from litellm import completion
-
 
 def completion_with_retry(
     model: str,
@@ -13,6 +11,10 @@ def completion_with_retry(
     **kwargs: Any,
 ) -> str:
     """모델을 호출하고 생성된 텍스트를 반환한다. 실패 시 지수 백오프로 재시도한다."""
+    # litellm 은 설치가 무거워서, 실제 호출이 필요한 시점에만 불러온다
+    # (덕분에 litellm 없이도 나머지 모듈을 임포트하고 테스트할 수 있다)
+    from litellm import completion
+
     last_error = None
 
     for attempt in range(1, max_retries + 1):

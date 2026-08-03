@@ -8,18 +8,26 @@ from dotenv import load_dotenv
 from io_utils import load_checkpoint, save_json
 from llm_utils import completion_with_retry
 
-# .env파일에서 API 키 불러오기
-load_dotenv()
 
-parser = argparse.ArgumentParser(description="뉴스 기사 제목을 생성하는 스크립트")
-# 경로 설정
-parser.add_argument("--input_path", type=str, default="outputs/rag_retrieval_results.json")
-parser.add_argument("--output_dir", type=str, default="outputs/generated", help="모델별 생성 결과를 저장할 폴더")
-# 하이퍼파라미터 설정
-parser.add_argument("--temperature", type=float, default=1.0, help="제목 생성 temperature")
-parser.add_argument("--max_retries", type=int, default=5, help="API 호출 실패 시 최대 재시도 횟수")
-parser.add_argument("--save_every", type=int, default=10, help="몇 건마다 중간 저장할지")
-args = parser.parse_args()
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="뉴스 기사 제목을 생성하는 스크립트")
+    # 경로 설정
+    parser.add_argument("--input_path", type=str, default="outputs/rag_retrieval_results.json")
+    parser.add_argument("--output_dir", type=str, default="outputs/generated", help="모델별 생성 결과를 저장할 폴더")
+    # 하이퍼파라미터 설정
+    parser.add_argument("--temperature", type=float, default=1.0, help="제목 생성 temperature")
+    parser.add_argument("--max_retries", type=int, default=5, help="API 호출 실패 시 최대 재시도 횟수")
+    parser.add_argument("--save_every", type=int, default=10, help="몇 건마다 중간 저장할지")
+    return parser
+
+
+# 생성에 사용할 모델 config
+MODELS = [
+    {"model": "gpt-4o", "use_rag": False, "output": "GPT_LLM"},
+    {"model": "gpt-4o", "use_rag": True, "output": "GPT_RAG"},
+    {"model": "gemini/gemini-2.0-flash-001", "use_rag": False, "output": "GEMINI_LLM"},
+    {"model": "gemini/gemini-2.0-flash-001", "use_rag": True, "output": "GEMINI_RAG"},
+]
 
 # 시스템 프롬프트
 SYSTEM_PROMPT = """
@@ -119,14 +127,11 @@ def generate_titles(
 
 
 # 메인 실행
-if __name__ == "__main__":
-    # 모델 config 값
-    models = [
-        {"model": "gpt-4o", "use_rag": False, "output": "GPT_LLM"},
-        {"model": "gpt-4o", "use_rag": True, "output": "GPT_RAG"},
-        {"model": "gemini/gemini-2.0-flash-001", "use_rag": False, "output": "GEMINI_LLM"},
-        {"model": "gemini/gemini-2.0-flash-001", "use_rag": True, "output": "GEMINI_RAG"},
-    ]
+def main() -> None:
+    args = build_parser().parse_args()
+
+    # .env파일에서 API 키 불러오기
+    load_dotenv()
 
     # 검색 결과 파일 열기
     with open(args.input_path, "r", encoding="utf-8") as f:
@@ -135,7 +140,7 @@ if __name__ == "__main__":
     os.makedirs(args.output_dir, exist_ok=True)
 
     # 모델마다 생성 후 각각 저장
-    for model in models:
+    for model in MODELS:
         output_path = os.path.join(args.output_dir, f"{model['output']}.json")
         print(f"[{model['output']}] {model['model']} / RAG={model['use_rag']} 생성 시작")
 
@@ -144,3 +149,7 @@ if __name__ == "__main__":
         # 생성 결과 저장
         save_json(output_path, results)
         print(f"[{model['output']}] {len(results)}건 저장 -> {output_path}")
+
+
+if __name__ == "__main__":
+    main()

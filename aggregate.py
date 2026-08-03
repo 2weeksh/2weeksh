@@ -6,11 +6,14 @@ from typing import Any, Dict, List
 
 from io_utils import parse_json_object, save_json
 
-parser = argparse.ArgumentParser(description="평가 결과를 모델별 승률로 집계하는 스크립트")
-# 경로 설정
-parser.add_argument("--input_path", type=str, default="outputs/evaluate_clickbait_results.json")
-parser.add_argument("--output_path", type=str, default="outputs/win_rates.json")
-args = parser.parse_args()
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="평가 결과를 모델별 승률로 집계하는 스크립트")
+    # 경로 설정
+    parser.add_argument("--input_path", type=str, default="outputs/evaluate_clickbait_results.json")
+    parser.add_argument("--output_path", type=str, default="outputs/win_rates.json")
+    return parser
+
 
 # 평가에 사용된 라벨
 LABELS = ["A", "B", "C", "D", "E"]
@@ -113,7 +116,9 @@ def print_summary(summary: Dict[str, Any]) -> None:
 
 
 # 메인 실행
-if __name__ == "__main__":
+def main() -> None:
+    args = build_parser().parse_args()
+
     with open(args.input_path, "r", encoding="utf-8") as f:
         evaluation_results = json.load(f)
 
@@ -123,3 +128,7 @@ if __name__ == "__main__":
     # 집계 결과 저장
     save_json(args.output_path, summary)
     print(f"\n집계 결과 저장 -> {args.output_path}")
+
+
+if __name__ == "__main__":
+    main()

@@ -114,6 +114,24 @@ python aggregate.py
 2)와 3)은 중간 저장 및 이어하기를 지원합니다. 중단된 경우 같은 명령을 다시 실행하면
 이미 처리된 index는 건너뛰고 남은 것부터 이어서 진행합니다.
 
+## 테스트
+
+API 키나 실제 데이터 없이 실행됩니다. 모델 호출은 전부 가짜 함수로 대체됩니다.
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
+`bm25s` / `kiwipiepy` 가 없는 환경에서는 검색 단계 테스트만 자동으로 건너뜁니다.
+
+| 파일 | 확인 대상 |
+|---|---|
+| `tests/test_io_utils.py` | 코드펜스·설명이 섞인 LLM 응답의 JSON 추출, 원자적 저장, 손상된 체크포인트 복구 |
+| `tests/test_retrieval.py` | 길이 필터, 코퍼스-원본 정렬, `k`/`sample_size` 초과 입력 방어, 시드 재현성 |
+| `tests/test_judge.py` | 모델별 결과 병합, 불완전 기사 제외, 후보 제목 파싱, **이어하기 시 제시 순서 재현** |
+| `tests/test_aggregate.py` | 제시 위치가 아닌 모델로 승수 귀속, 승률 합 = 1, 파싱 실패 처리, Wilson 신뢰구간 |
+
 ## 파이프라인
 
 | 단계 | 스크립트 | 입력 | 출력 |

@@ -9,19 +9,19 @@ from dotenv import load_dotenv
 from io_utils import load_checkpoint, parse_json_object, save_json
 from llm_utils import completion_with_retry
 
-parser = argparse.ArgumentParser(description="생성된 제목들을 평가하는 스크립트")
-# 경로 설정
-parser.add_argument("--input_dir", type=str, default="outputs/generated", help="모델별 생성 결과가 저장된 폴더")
-parser.add_argument("--output_path", type=str, default="outputs/evaluate_clickbait_results.json")
-# 하이퍼파라미터 설정
-parser.add_argument("--evaluate_model", type=str, default="fireworks_ai/deepseek-v3-0324")
-parser.add_argument("--temperature", type=float, default=0.0, help="평가 모델 temperature")
-parser.add_argument("--max_retries", type=int, default=5, help="API 호출 실패 시 최대 재시도 횟수")
-parser.add_argument("--save_every", type=int, default=10, help="몇 건마다 중간 저장할지")
-args = parser.parse_args()
 
-# API 키 설정
-load_dotenv()
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="생성된 제목들을 평가하는 스크립트")
+    # 경로 설정
+    parser.add_argument("--input_dir", type=str, default="outputs/generated", help="모델별 생성 결과가 저장된 폴더")
+    parser.add_argument("--output_path", type=str, default="outputs/evaluate_clickbait_results.json")
+    # 하이퍼파라미터 설정
+    parser.add_argument("--evaluate_model", type=str, default="fireworks_ai/deepseek-v3-0324")
+    parser.add_argument("--temperature", type=float, default=0.0, help="평가 모델 temperature")
+    parser.add_argument("--max_retries", type=int, default=5, help="API 호출 실패 시 최대 재시도 횟수")
+    parser.add_argument("--save_every", type=int, default=10, help="몇 건마다 중간 저장할지")
+    return parser
+
 
 # 평가 모델 시스템 프롬프트
 EVALUATOR_SYSTEM_PROMPT = """
@@ -183,7 +183,12 @@ def evaluation(
 
 
 # 메인 실행
-if __name__ == "__main__":
+def main() -> None:
+    args = build_parser().parse_args()
+
+    # API 키 설정
+    load_dotenv()
+
     random.seed(42)
 
     all_data = load_generated(args.input_dir)
@@ -196,3 +201,7 @@ if __name__ == "__main__":
     # 최종 결과 저장
     save_json(args.output_path, evaluation_results)
     print(f"{len(evaluation_results)}건 저장 -> {args.output_path}")
+
+
+if __name__ == "__main__":
+    main()
