@@ -4,7 +4,7 @@ import math
 from collections import Counter
 from typing import Any, Dict, List
 
-from io_utils import save_json
+from io_utils import parse_json_object, save_json
 
 parser = argparse.ArgumentParser(description="평가 결과를 모델별 승률로 집계하는 스크립트")
 # 경로 설정
@@ -18,11 +18,15 @@ LABELS = ["A", "B", "C", "D", "E"]
 
 def parse_choice(evaluation: Any, valid_labels: List[str]) -> str:
     """평가 모델 출력에서 선택한 라벨만 꺼낸다. 형식이 어긋나면 빈 문자열을 반환한다."""
-    try:
-        choice = json.loads(evaluation)["choice"].strip().upper()
-    except (json.JSONDecodeError, TypeError, KeyError, AttributeError):
+    parsed = parse_json_object(evaluation)
+    if parsed is None:
         return ""
 
+    choice = parsed.get("choice")
+    if not isinstance(choice, str):
+        return ""
+
+    choice = choice.strip().upper()
     return choice if choice in valid_labels else ""
 
 
@@ -94,9 +98,7 @@ def aggregate(evaluation_results: List[Dict[str, Any]]) -> Dict[str, Any]:
 
 
 def print_summary(summary: Dict[str, Any]) -> None:
-    print(
-        f"\n전체 {summary['total_items']}건 / 유효 {summary['valid_items']}건 / 파싱 실패 {summary['invalid_items']}건"
-    )
+    print(f"\n전체 {summary['total_items']}건 / 유효 {summary['valid_items']}건 / 파싱 실패 {summary['invalid_items']}건")
 
     print("\n[모델별 승률]")
     print(f"{'모델':<14}{'승':>6}{'승률':>10}{'95% CI':>20}")

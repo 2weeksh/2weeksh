@@ -120,7 +120,6 @@ def generate_titles(
 
 # 메인 실행
 if __name__ == "__main__":
-
     # 모델 config 값
     models = [
         {"model": "gpt-4o", "use_rag": False, "output": "GPT_LLM"},

@@ -113,6 +113,14 @@ if __name__ == "__main__":
     random.seed(42)
 
     corpus_list, corpus_map = build_corpus(args.clickbait_path, args.min_num_character, args.max_num_character)
+
+    # 코퍼스가 비면 BM25 인덱싱이 내부에서 알아보기 힘든 예외로 죽으므로 여기서 막는다
+    if not corpus_list:
+        raise SystemExit(
+            f"[오류] 길이 조건({args.min_num_character}~{args.max_num_character}자)을 만족하는 기사가 없습니다.\n"
+            f"       입력 경로와 필터 값을 확인하세요: {args.clickbait_path}"
+        )
+
     print(f"corpus {len(corpus_list)}건 구축 완료")
 
     bm25_retriever = create_retriever(corpus_list)

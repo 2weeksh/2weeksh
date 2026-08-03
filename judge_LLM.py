@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Tuple
 
 from dotenv import load_dotenv
 
-from io_utils import load_checkpoint, save_json
+from io_utils import load_checkpoint, parse_json_object, save_json
 from llm_utils import completion_with_retry
 
 parser = argparse.ArgumentParser(description="생성된 제목들을 평가하는 스크립트")
@@ -61,6 +61,11 @@ def load_generated(input_dir: str) -> List[Dict[str, Any]]:
 
     for key in model_keys:
         path = os.path.join(input_dir, f"{key}.json")
+        if not os.path.exists(path):
+            raise SystemExit(
+                f"[오류] 생성 결과 파일이 없습니다: {path}\n"
+                f"       generated_model.py 를 먼저 실행해 {len(model_keys)}개 모델의 제목을 모두 생성하세요."
+            )
         with open(path, "r", encoding="utf-8") as f:
             for item in json.load(f):
                 row = merged.setdefault(item["index"], {"index": item["index"]})
@@ -78,10 +83,13 @@ def load_generated(input_dir: str) -> List[Dict[str, Any]]:
 
 def parse_title(raw_title_json: Any) -> Tuple[str, bool]:
     """생성 결과 JSON에서 제목만 꺼낸다. 파싱에 실패하면 원문을 그대로 쓰고 실패를 알린다."""
-    try:
-        return json.loads(raw_title_json)["title"].strip(), True
-    except (json.JSONDecodeError, TypeError, KeyError, AttributeError):
-        return str(raw_title_json).strip(), False
+    parsed = parse_json_object(raw_title_json)
+    if parsed is not None:
+        title = parsed.get("title")
+        if isinstance(title, str) and title.strip():
+            return title.strip(), True
+
+    return str(raw_title_json).strip(), False
 
 
 # 평가 함수
@@ -105,6 +113,7 @@ def evaluation(
     for item in all_data:
         # 제목들 라벨과 같이 정리
         candidates_with_labels = []
+        item_parse_failure = 0
 
         # 셔플을 위한 반복문
         for key, label in KEY_TO_LABEL_MAP.items():
@@ -115,7 +124,7 @@ def evaluation(
 
             title, parsed = parse_title(item.get(key, '{"title": "내용 없음"}'))
             if not parsed:
-                parse_failure += 1
+                item_parse_failure += 1
             candidates_with_labels.append((label, title))
 
         # 평가 순서 섞기 (건너뛴 기사도 셔플을 소모해야 재실행 시 순서가 동일하게 유지됨)
@@ -123,6 +132,9 @@ def evaluation(
 
         if item["index"] in evaluated_index:
             continue
+
+        # 실제로 평가한 기사만 집계해야 이어하기 때 경고 건수가 부풀지 않는다
+        parse_failure += item_parse_failure
 
         # 섞인 순서에 따라 데이터 재구성
         shuffled_candidates_for_prompt = {

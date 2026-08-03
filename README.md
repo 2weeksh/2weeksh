@@ -56,7 +56,7 @@ pip install -r requirements.txt
 ```
 
 > `litellm` 은 하위 의존성이 Rust 툴체인을 요구해 Windows에서 설치가 실패할 수 있습니다.
-> 생성/평가 단계는 Linux 환경에서 실행하는 것을 권장합니다. (`retrival.py` 는 Windows에서도 동작)
+> 생성/평가 단계는 Linux 환경에서 실행하는 것을 권장합니다. (`retrieval.py` 는 Windows에서도 동작)
 
 ### 3. API 키 설정
 
@@ -99,7 +99,7 @@ FIREWORKS_AI_API_KEY=    # 평가 (DeepSeek-V3)
 
 ```bash
 # 1) BM25 유사 기사 검색
-python retrival.py --k 5 --sample_size 200
+python retrieval.py --k 5 --sample_size 200
 
 # 2) 모델별 제목 생성 (모델마다 outputs/generated/*.json 로 저장)
 python generated_model.py --temperature 1.0
@@ -118,7 +118,7 @@ python aggregate.py
 
 | 단계 | 스크립트 | 입력 | 출력 |
 |---|---|---|---|
-| 검색 | `retrival.py` | `data/TL_*.json`(코퍼스), `data/VL_*.json`(쿼리) | `outputs/rag_retrieval_results.json` |
+| 검색 | `retrieval.py` | `data/TL_*.json`(코퍼스), `data/VL_*.json`(쿼리) | `outputs/rag_retrieval_results.json` |
 | 생성 | `generated_model.py` | 검색 결과 | `outputs/generated/{GPT_LLM,GPT_RAG,GEMINI_LLM,GEMINI_RAG}.json` |
 | 평가 | `judge_LLM.py` | 모델별 생성 결과 | `outputs/evaluate_clickbait_results.json` |
 | 집계 | `aggregate.py` | 평가 결과 | `outputs/win_rates.json` |
