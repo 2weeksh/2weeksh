@@ -1,28 +1,81 @@
-# RAG 기반 낚시성 기사 제목 생성 및 평가
+# 클릭 유도성 기사 제목 생성 (Clickbait Article Headline Generation)
 
-BM25로 검색한 사람이 작성한 낚시성 제목을 참고 예시로 넣어(RAG), LLM이 생성한 기사 제목이
-얼마나 클릭을 유도하는지를 LLM 심사자로 평가하는 실험 코드입니다.
-
-## 논문
-
-> 이주혁, 강경필. **대형 언어 모델과 검색 증강 생성 기법을 활용한 클릭 유도성 기사 제목 생성**.
+> 강원대학교 이주혁(지도교수: 강경필)의 학부생 논문 **"대형 언어 모델과 검색 증강 생성 기법을 활용한 클릭 유도성 기사 제목 생성"**의 공식 코드 저장소입니다.
+>
 > 한국정보과학회 2025 한국컴퓨터종합학술대회 논문집, 2025.7, pp. 2036-2038.
-> <https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE12318738>
+> **논문 링크:** [DBpia에서 논문 보기](https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE12318738)
 
-## 설치
+---
+
+## 프로젝트 개요
+
+본 프로젝트는 디지털 뉴스 환경에서 독자의 흥미를 유발하는 클릭 유도성 기사 제목을 자동으로 생성합니다.
+
+단순 LLM(대형 언어 모델)을 넘어, **RAG(검색 증강 생성)** 기법을 적용하여 기존의 흥미로운 기사 제목을 참고함으로써, 더 자연스럽고 효과적인 제목을 생성하는 것을 목표로 합니다.
+
+## 주요 특징
+
+* **RAG vs Direct 비교:** 기사 본문만 사용하는 'Direct' 방식과, 유사 기사 Top-5를 참조하는 'RAG' 방식을 비교 분석합니다.
+* **최신 LLM 활용:** `GPT-4o` 및 `Gemini-2.0-Flash` 모델을 사용하여 제목 생성을 수행합니다.
+* **다각적 평가:** LLM 기반 자동 평가(`DeepSeek-V3`)와 사용자 설문 평가를 모두 수행하여 품질을 검증합니다.
+* **RAG 효과 입증:** RAG 방식이 Direct 방식보다 **더 높은 선호도**와 **더 낮은 비정합성(본문 연관성)**을 보임을 확인했습니다.
+
+## 사용 기술
+
+* **Language:** `Python`
+* **LLM Models:** `GPT-4o`, `Gemini-2.0-Flash`
+* **RAG/Search:** `BM25`
+* **Evaluation:** `DeepSeek-V3`
+
+## 시스템 아키텍처
+
+본 프로젝트는 Direct 방식과 RAG 방식으로 나누어 제목 생성을 진행합니다.
+
+* **Direct 방식:** LLM(`GPT-4o`, `Gemini-2.0-Flash`)에 기사 본문을 직접 입력하여 제목을 생성합니다.
+* **RAG 방식:**
+    1.  입력 기사와 유사한 기존 기사 5개를 `BM25` 알고리즘으로 검색합니다.
+    2.  (입력 본문 + 검색된 5개 제목)을 프롬프트로 구성하여 LLM에 전달합니다.
+    3.  LLM이 참조 정보를 바탕으로 최종 제목을 생성합니다.
+
+## 설치 및 실행 방법
+
+### 1. 저장소 복제 및 브랜치 이동
+
+**중요:** 모든 코드는 `dev_clickbait_title_generation_rag` 브랜치에 있습니다.
+
+```bash
+git clone https://github.com/2weeksh/2weeksh.git
+cd 2weeksh
+git checkout dev_clickbait_title_generation_rag
+```
+
+### 2. 필요 라이브러리 설치
 
 ```bash
 pip install -r requirements.txt
-cp .env.example .env   # .env 에 API 키 입력
 ```
 
 > `litellm` 은 하위 의존성이 Rust 툴체인을 요구해 Windows에서 설치가 실패할 수 있습니다.
 > 생성/평가 단계는 Linux 환경에서 실행하는 것을 권장합니다. (`retrival.py` 는 Windows에서도 동작)
 
-## 데이터
+### 3. API 키 설정
 
-`data/` 아래에 아래 두 파일이 있어야 합니다. (AI Hub 낚시성 기사 탐지 데이터의 **라벨링데이터**를
-파일 하나로 병합한 형태이며, 용량이 커서 git에는 포함하지 않습니다.)
+`.env.example` 을 `.env` 로 복사한 뒤 키를 채워 넣습니다. (`.env` 는 git에 올라가지 않습니다.)
+
+```bash
+cp .env.example .env
+```
+
+```
+OPENAI_API_KEY=          # 제목 생성 (GPT-4o)
+GEMINI_API_KEY=          # 제목 생성 (Gemini-2.0-Flash)
+FIREWORKS_AI_API_KEY=    # 평가 (DeepSeek-V3)
+```
+
+### 4. 데이터 준비
+
+`data/` 아래에 아래 두 파일이 있어야 합니다. AI Hub 낚시성 기사 탐지 데이터의 **라벨링데이터**를
+파일 하나로 병합한 형태이며, 재배포가 제한되어 저장소에는 포함하지 않습니다.
 
 | 파일 | 역할 |
 |---|---|
@@ -40,9 +93,9 @@ cp .env.example .env   # .env 에 API 키 입력
 > 원천데이터(`TS_*`)는 `sourceDataInfo.newsTitle/newsContent` 만 있고 낚시성 제목이 없으므로
 > 코퍼스로 쓸 수 없습니다. 반드시 라벨링데이터를 병합해서 사용하세요.
 
-## 실행
+### 5. 실행
 
-데이터는 `data/` 에, 산출물은 `outputs/` 에 놓는 것을 기본값으로 합니다. (둘 다 git 추적 제외)
+산출물은 `outputs/` 에 저장됩니다. (`data/`, `outputs/` 모두 git 추적 제외)
 
 ```bash
 # 1) BM25 유사 기사 검색
@@ -70,9 +123,17 @@ python aggregate.py
 | 평가 | `judge_LLM.py` | 모델별 생성 결과 | `outputs/evaluate_clickbait_results.json` |
 | 집계 | `aggregate.py` | 평가 결과 | `outputs/win_rates.json` |
 
-## 비교 대상
+## 평가 방식
 
 `Direct_Human`(사람이 작성한 낚시성 제목), `GPT`, `RAG_GPT`, `Gemini`, `RAG_Gemini` 5개 후보를
 매 기사마다 무작위 순서로 제시하고, 심사자가 가장 읽고 싶은 제목 하나를 고릅니다.
-심사자는 생성 모델과 겹치지 않는 제3의 모델(DeepSeek-V3)을 사용해 self-preference 편향을 피했습니다.
-`aggregate.py` 는 모델별 승률과 함께 **제시 위치별 선택 비율**을 출력하므로 순서 편향 여부를 확인할 수 있습니다.
+
+* **self-preference 편향 회피:** 심사자는 생성 모델과 겹치지 않는 제3의 모델(`DeepSeek-V3`)을 사용합니다.
+* **순서 편향 확인:** `aggregate.py` 가 모델별 승률(Wilson 95% 신뢰구간 포함)과 함께
+  **제시 위치별 선택 비율**을 출력하므로, 모든 위치가 0.2 근처인지로 셔플이 제 역할을 했는지 확인할 수 있습니다.
+
+## 실험 결과
+
+LLM 자동 평가 및 사용자 설문 평가 결과, Gemini-2.0-Flash (RAG) 모델이 가장 흥미로운 제목을 생성하는 것으로 나타났습니다.
+
+또한 RAG를 적용한 모델들이 Direct 방식보다 더 높은 선호도와 본문 연관성을 보였습니다.
